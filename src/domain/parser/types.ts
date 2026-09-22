@@ -63,3 +63,10 @@ export type ResolveResult = {
   shapes: Shape[];
   incomplete: IncompleteShape[];
 };
+
+// ── 連通關係：Shape 之間共用哪些頂點 ──
+export type Connection = {
+  shapeA: string;               // Shape.id
+  shapeB: string;               // Shape.id
+  sharedVertexIds: string[];    // 1 個 = 蝴蝶結型共用頂點；2 個以上 = 共用邊 / 多點
+};
