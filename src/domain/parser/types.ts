@@ -70,3 +70,29 @@ export type Connection = {
   shapeB: string;               // Shape.id
   sharedVertexIds: string[];    // 1 個 = 蝴蝶結型共用頂點；2 個以上 = 共用邊 / 多點
 };
+
+// ── 整個場景（Sprint 1 UI 的單一狀態來源）──
+// 注意：這裡只定義型別，實際的初始狀態與 actions 在 store/useSceneStore.ts
+export type Scene = {
+  image: HTMLImageElement | null;
+  text: string;
+  classifiedStatements: ClassifiedStatements | null;
+  ocrResult: OCRResult | null;
+  vertices: Vertex[];
+  shapes: Shape[];
+  connections: Connection[];
+  mode: 'idle' | 'guided-naming' | 'manual-naming' | 'manual-linking' | 'exploding';
+  namingQueue: string[];
+  currentManualShape: string[];
+};
+
+// ── OCR 狀態（Sprint 2.5 用，先佔位避免 Scene 無法編譯）──
+export type OCRStatus = 'idle' | 'loading-model' | 'recognizing' | 'done' | 'error';
+
+export type OCRResult = {
+  status: OCRStatus;
+  latex: string;
+  confidence?: number;
+  error?: string;
+  modelProgress?: number;
+};
