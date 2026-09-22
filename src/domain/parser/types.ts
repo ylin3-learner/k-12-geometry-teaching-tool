@@ -19,3 +19,18 @@ export type Statement =
   | { kind: 'equal-length';  id: string; segments: [[string, string], [string, string]]; source: string }
   | { kind: 'parallel';      id: string; segments: [[string, string], [string, string]]; source: string }
   | { kind: 'perpendicular'; id: string; segments: [[string, string], [string, string]]; source: string };
+
+// ── Parser 輸出：Statement[] + 未解析的原始片段 ──
+export type ParseResult = {
+  statements: Statement[];
+  unresolved: string[];     // 原始文字片段，例如 "△AB"、"AC=x"
+};
+
+// ── Classifier 輸出：四分類 ──
+export type ClassifiedStatements = {
+  definitions: Statement[];   // triangle / quadrilateral —— 直接構造 Shape
+  auxiliary: Statement[];     // segment —— MVP 中通常為空
+  constraints: Statement[];   // angle-value / segment-length / equal-angle /
+                              // equal-length / parallel / perpendicular —— 純顯示
+  unresolved: string[];       // 從 ParseResult 傳下來
+};

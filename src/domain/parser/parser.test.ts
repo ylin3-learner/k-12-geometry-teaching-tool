@@ -3,7 +3,7 @@ import { tokenize } from './tokenizer';
 import { parse } from './parser';
 import type { Statement } from './types';
 
-const p = (input: string): Statement[] => parse(tokenize(input));
+const p = (input: string): Statement[] => parse(tokenize(input)).statements;
 
 describe('parse — 定義性', () => {
   it('△ABC → 1 個 triangle', () => {
@@ -177,5 +177,32 @@ describe('parse — 只貼題幹', () => {
     expect(r.map((s) => s.kind).sort()).toEqual([
       'parallel', 'segment-length', 'segment-length',
     ]);
+  });
+});
+
+describe('parse — unresolved', () => {
+  it('△AB（字母不足）進 unresolved', () => {
+    const r = parse(tokenize('△AB'));
+    expect(r.unresolved).toContain('△AB');
+  });
+
+  it('設AC=x（變數無法解析）進 unresolved', () => {
+    const r = parse(tokenize('設AC=x'));
+    expect(r.unresolved.some((s) => s.includes('AC=x'))).toBe(true);
+  });
+
+  it('成功的 statement 不會進 unresolved', () => {
+    const r = parse(tokenize('△ABC'));
+    expect(r.unresolved).toHaveLength(0);
+  });
+
+  it('中文連接詞不會進 unresolved', () => {
+    const r = parse(tokenize('△ABC和△ADE'));
+    expect(r.unresolved).toHaveLength(0);
+  });
+
+  it('題號 (1) 不會進 unresolved（純雜訊）', () => {
+    const r = parse(tokenize('(1) △ABC'));
+    expect(r.unresolved).toHaveLength(0);
   });
 });

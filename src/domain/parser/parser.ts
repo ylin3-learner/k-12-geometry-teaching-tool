@@ -1,5 +1,5 @@
 import type { Token } from './tokenizer';
-import type { AngleRef, Statement } from './types';
+import type { AngleRef, ParseResult, Statement } from './types';
 
 // ── 修飾詞：單字（中文一字）+ 多字（中文兩字以上）──
 const MODIFIER_CHARS = new Set(['若', '設', '设', '令']);
@@ -8,62 +8,144 @@ const MODIFIER_MULTI: string[][] = [
 ];
 
 // ── 主入口 ──
-export function parse(tokens: Token[]): Statement[] {
+export function parse(tokens: Token[]): ParseResult {
   const statements: Statement[] = [];
+  const unresolved: string[] = [];
   let i = 0;
   let idCounter = 0;
   const nextId = (prefix: string) => `${prefix}-${idCounter++}`;
 
-  while (i < tokens.length) {
-    // 跳過修飾詞
-    const afterMod = skipModifiers(tokens, i);
-    if (afterMod > i) { i = afterMod; continue; }
+  // pending 未匹配片段的起點；null 表示目前沒有在累積
+  let pendingStart: number | null = null;
 
-    // 跳過邊界與未知
+  const flushPending = (end: number) => {
+    if (pendingStart === null) return;
+    const slice = tokens.slice(pendingStart, end);
+    // 只有含「有意義 token」的片段才算 unresolved；
+    // 純 digit、純 unknown（例如題號 "(1)"）屬於預期雜訊，不顯示給老師
+    if (hasMeaningfulToken(slice)) {
+      const text = slice.map(tokenToText).join('');
+      if (text.length > 0) unresolved.push(text);
+    }
+    pendingStart = null;
+  };
+
+  const markPending = (pos: number) => {
+    if (pendingStart === null) pendingStart = pos;
+  };
+
+  while (i < tokens.length) {
+    // 跳過修飾詞（flush pending，因為修飾詞是子句分隔）
+    const afterMod = skipModifiers(tokens, i);
+    if (afterMod > i) {
+      flushPending(i);
+      i = afterMod;
+      continue;
+    }
+
     const t = tokens[i];
-    if (t.type === 'boundary' || t.type === 'unknown') { i++; continue; }
+
+    // 預期雜訊：boundary / unknown / chinese —— flush 後跳過
+    if (t.type === 'boundary' || t.type === 'unknown' || t.type === 'chinese') {
+      flushPending(i);
+      i++;
+      continue;
+    }
+
+    let matched = false;
 
     // ── 三角形 ──
     if (t.type === 'triangle') {
       const r = matchTriangle(tokens, i, nextId);
-      if (r) { statements.push(r.stmt); i = r.next; continue; }
-    }
-
-    // ── 四邊形 ──
-    if (t.type === 'quadrilateral') {
-      const r = matchQuadrilateral(tokens, i, nextId);
-      if (r) { statements.push(r.stmt); i = r.next; continue; }
-    }
-
-    // ── 角度開頭：∠... ──
-    if (t.type === 'angle') {
-      const r = matchAngleStatement(tokens, i, nextId);
       if (r) {
-        statements.push(...r.stmts);
+        flushPending(i);
+        statements.push(r.stmt);
         i = r.next;
-        continue;
+        matched = true;
       }
     }
 
-    // ── 字母開頭：兩字母+運算子 ──
-    if (t.type === 'letter') {
-      const r = matchLetterStatement(tokens, i, nextId);
-      if (r) { statements.push(r.stmt); i = r.next; continue; }
+    // ── 四邊形 ──
+    if (!matched && t.type === 'quadrilateral') {
+      const r = matchQuadrilateral(tokens, i, nextId);
+      if (r) {
+        flushPending(i);
+        statements.push(r.stmt);
+        i = r.next;
+        matched = true;
+      }
     }
 
-    i++;
+    // ── 角度開頭 ──
+    if (!matched && t.type === 'angle') {
+      const r = matchAngleStatement(tokens, i, nextId);
+      if (r) {
+        flushPending(i);
+        statements.push(...r.stmts);
+        i = r.next;
+        matched = true;
+      }
+    }
+
+    // ── 字母開頭 ──
+    if (!matched && t.type === 'letter') {
+      const r = matchLetterStatement(tokens, i, nextId);
+      if (r) {
+        flushPending(i);
+        statements.push(r.stmt);
+        i = r.next;
+        matched = true;
+      }
+    }
+
+    // 沒匹配：把當前位置加入 pending
+    if (!matched) {
+      markPending(i);
+      i++;
+    }
   }
 
-  return statements;
+  // 迴圈結束，flush 最後的 pending
+  flushPending(tokens.length);
+
+  return { statements, unresolved };
+}
+
+// ── 判斷 pending 片段是否含「有意義 token」──
+function hasMeaningfulToken(tokens: Token[]): boolean {
+  return tokens.some(
+    (t) =>
+      t.type === 'triangle' ||
+      t.type === 'quadrilateral' ||
+      t.type === 'angle' ||
+      t.type === 'letter',
+  );
+}
+
+// ── Token → 原始文字（unresolved 重建用）──
+function tokenToText(t: Token): string {
+  switch (t.type) {
+    case 'triangle':      return '△';
+    case 'quadrilateral': return '□';
+    case 'angle':         return '∠';
+    case 'perp':          return '⊥';
+    case 'parallel':      return '∥';
+    case 'sim':           return '∼';
+    case 'degree':        return '°';
+    case 'equals':        return '=';
+    case 'lbrace':        return '{';
+    case 'rbrace':        return '}';
+    case 'caret':         return '^';
+    case 'underscore':    return '_';
+    default:              return (t as { value?: string }).value ?? '';
+  }
 }
 
 // ── 跳過修飾詞 ──
 function skipModifiers(tokens: Token[], i: number): number {
-  // 單字修飾詞
   const t = tokens[i];
   if (t?.type === 'chinese' && MODIFIER_CHARS.has(t.value)) return i + 1;
 
-  // 多字修飾詞
   for (const pattern of MODIFIER_MULTI) {
     if (matchChineseSeq(tokens, i, pattern)) return i + pattern.length;
   }
@@ -80,7 +162,11 @@ function matchChineseSeq(tokens: Token[], i: number, pattern: string[]): boolean
 }
 
 // ── 讀取連續字母 ──
-function readLetters(tokens: Token[], i: number, count: number): { letters: string[]; next: number } | null {
+function readLetters(
+  tokens: Token[],
+  i: number,
+  count: number,
+): { letters: string[]; next: number } | null {
   const letters: string[] = [];
   let j = i;
   for (let k = 0; k < count; k++) {
@@ -93,11 +179,14 @@ function readLetters(tokens: Token[], i: number, count: number): { letters: stri
 }
 
 // ── 讀取數字（連續 digit token）──
-function readNumber(tokens: Token[], i: number): { value: number; next: number } | null {
+function readNumber(
+  tokens: Token[],
+  i: number,
+): { value: number; next: number } | null {
   let s = '';
   let j = i;
   while (j < tokens.length && tokens[j].type === 'digit') {
-    s += (tokens[j] as any).value;
+    s += (tokens[j] as { value: string }).value;
     j++;
   }
   if (s.length === 0) return null;
@@ -105,20 +194,24 @@ function readNumber(tokens: Token[], i: number): { value: number; next: number }
 }
 
 // ── 讀取角度引用：∠ + 1 或 3 個字母 ──
-function readAngleRef(tokens: Token[], i: number): { angle: AngleRef; next: number } | null {
+function readAngleRef(
+  tokens: Token[],
+  i: number,
+): { angle: AngleRef; next: number } | null {
   if (tokens[i]?.type !== 'angle') return null;
   const afterAngle = i + 1;
 
-  // 先嘗試三字母
   const three = readLetters(tokens, afterAngle, 3);
   if (three) {
     return {
-      angle: { vertex: three.letters[1], rays: [three.letters[0], three.letters[2]] },
+      angle: {
+        vertex: three.letters[1],
+        rays: [three.letters[0], three.letters[2]],
+      },
       next: three.next,
     };
   }
 
-  // 退回單字母
   const one = readLetters(tokens, afterAngle, 1);
   if (one) {
     return { angle: { vertex: one.letters[0] }, next: one.next };
@@ -137,7 +230,12 @@ function matchTriangle(
   if (!r) return null;
   const [a, b, c] = r.letters;
   return {
-    stmt: { kind: 'triangle', id: nextId('tri'), vertices: [a, b, c], source: `△${a}${b}${c}` },
+    stmt: {
+      kind: 'triangle',
+      id: nextId('tri'),
+      vertices: [a, b, c],
+      source: `△${a}${b}${c}`,
+    },
     next: r.next,
   };
 }
@@ -152,12 +250,17 @@ function matchQuadrilateral(
   if (!r) return null;
   const [a, b, c, d] = r.letters;
   return {
-    stmt: { kind: 'quadrilateral', id: nextId('quad'), vertices: [a, b, c, d], source: `□${a}${b}${c}${d}` },
+    stmt: {
+      kind: 'quadrilateral',
+      id: nextId('quad'),
+      vertices: [a, b, c, d],
+      source: `□${a}${b}${c}${d}`,
+    },
     next: r.next,
   };
 }
 
-// ── 角度開頭的 Statement：∠... = ... ──
+// ── 角度開頭：∠... = ... ──
 function matchAngleStatement(
   tokens: Token[],
   i: number,
@@ -166,7 +269,6 @@ function matchAngleStatement(
   const left = readAngleRef(tokens, i);
   if (!left) return null;
 
-  // 期望 =
   if (tokens[left.next]?.type !== 'equals') return null;
 
   let j = left.next + 1;
@@ -178,17 +280,16 @@ function matchAngleStatement(
       kind: 'equal-angle',
       id: nextId('eqa'),
       angles: [left.angle, right.angle],
-      source: angleSource(left.angle) + '=' + angleSource(right.angle),
+      source: `${angleSource(left.angle)}=${angleSource(right.angle)}`,
     }];
     j = right.next;
 
-    // 檢查連等式：再來一個 = ?
+    // 連等式：再來一個 = ?
     if (tokens[j]?.type === 'equals') {
       j++;
       const num = readNumber(tokens, j);
       if (num) {
         j = num.next;
-        // 期望 °
         if (tokens[j]?.type === 'degree') {
           j++;
           stmts.push({
@@ -197,18 +298,17 @@ function matchAngleStatement(
             angle: right.angle,
             value: num.value,
             unit: 'deg',
-            source: angleSource(right.angle) + '=' + num.value + '°',
+            source: `${angleSource(right.angle)}=${num.value}°`,
           });
         }
       } else {
-        // 連等式但右邊又是角度（∠A=∠B=∠C）
         const right2 = readAngleRef(tokens, j);
         if (right2) {
           stmts.push({
             kind: 'equal-angle',
             id: nextId('eqa'),
             angles: [right.angle, right2.angle],
-            source: angleSource(right.angle) + '=' + angleSource(right2.angle),
+            source: `${angleSource(right.angle)}=${angleSource(right2.angle)}`,
           });
           j = right2.next;
         }
@@ -231,7 +331,7 @@ function matchAngleStatement(
         angle: left.angle,
         value: num.value,
         unit: 'deg',
-        source: angleSource(left.angle) + '=' + num.value + '°',
+        source: `${angleSource(left.angle)}=${num.value}°`,
       }],
       next: j,
     };
@@ -251,11 +351,9 @@ function matchLetterStatement(
   const [a, b] = left.letters;
   const op = tokens[left.next];
 
-  // 等號
   if (op?.type === 'equals') {
     const j = left.next + 1;
 
-    // AB=CD → equal-length
     const rightLetters = readLetters(tokens, j, 2);
     if (rightLetters) {
       const [c, d] = rightLetters.letters;
@@ -270,7 +368,6 @@ function matchLetterStatement(
       };
     }
 
-    // AB=4 → segment-length
     const num = readNumber(tokens, j);
     if (num) {
       return {
@@ -288,7 +385,6 @@ function matchLetterStatement(
     return null;
   }
 
-  // 平行
   if (op?.type === 'parallel') {
     const right = readLetters(tokens, left.next + 1, 2);
     if (!right) return null;
@@ -304,7 +400,6 @@ function matchLetterStatement(
     };
   }
 
-  // 垂直
   if (op?.type === 'perp') {
     const right = readLetters(tokens, left.next + 1, 2);
     if (!right) return null;
@@ -323,7 +418,6 @@ function matchLetterStatement(
   return null;
 }
 
-// ── 產生角度 source 字串 ──
 function angleSource(a: AngleRef): string {
   if (a.rays) return `∠${a.rays[0]}${a.vertex}${a.rays[1]}`;
   return `∠${a.vertex}`;
