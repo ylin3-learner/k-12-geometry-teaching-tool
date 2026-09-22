@@ -34,3 +34,32 @@ export type ClassifiedStatements = {
                               // equal-length / parallel / perpendicular —— 純顯示
   unresolved: string[];       // 從 ParseResult 傳下來
 };
+
+// ── 座標圖層 ──
+export type Vertex = {
+  id: string;
+  name: string;            // "A"、"B"、"C" —— 文字模式必填，是合成的查找鍵
+  position: { x: number; y: number };  // 圖片座標系（image space）
+};
+
+// ── 合成結果：Shape 直接由 Statement + Vertex 構造 ──
+export type Shape = {
+  id: string;
+  name: string;             // "△ABC"、"四邊形ABCD"
+  vertexIds: string[];      // 依 Statement 宣告順序，對應到 Vertex.id
+  visible: boolean;
+  source: 'text' | 'manual';
+};
+
+// ── 合成時缺少座標的 Shape（尚未完成，等老師點完字母再試一次）──
+export type IncompleteShape = {
+  statementId: string;
+  name: string;             // "△ABC"
+  missingLabels: string[];  // ['B', 'D']
+};
+
+// ── 合成結果 ──
+export type ResolveResult = {
+  shapes: Shape[];
+  incomplete: IncompleteShape[];
+};
