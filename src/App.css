@@ -146,3 +146,47 @@ html, body, #root {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* ── 未解析片段清單 ── */
+.unresolved-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unresolved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.unresolved-item__text {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  color: #7a5a00;
+  word-break: break-all;
+}
+
+.unresolved-item__fix {
+  flex-shrink: 0;
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.unresolved-item__fix:hover {
+  background: #3a7bc8;
+}

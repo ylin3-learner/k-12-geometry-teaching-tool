@@ -2,6 +2,7 @@ import { Canvas } from './features/canvas/Canvas';
 import { PasteHandler } from './features/input/PasteHandler';
 import { TextInput } from './features/input/TextInput';
 import { GuidedNaming } from './features/parser/GuidedNaming';
+import { UnresolvedList } from './features/parser/UnresolvedList';
 import './App.css';
 
 function App() {
@@ -15,6 +16,10 @@ function App() {
             <label className="sidebar__label">題目文字</label>
             <TextInput />
           </section>
+
+          <UnresolvedList />
+
+          {/* 步驟 4 之後會加 ManualLinkControl 到這裡 */}
         </aside>
 
         <main className="canvas-container">
