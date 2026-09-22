@@ -1,24 +1,62 @@
+import { useRef } from 'react';
 import { ImageLayer } from './ImageLayer';
+import { VertexLayer } from './VertexLayer';
 import { useSceneStore } from '../../store/useSceneStore';
+import {
+  screenToWorld,
+  getSvgScale,
+  worldEpsilonFromScale,
+} from '../../domain/interaction/screen';
+import { findSnapTarget } from '../../domain/interaction/snapVertex';
 
-/**
- * 主畫布：一個 SVG 元素。
- *
- * - viewBox 對應圖片的自然尺寸（若無圖片則用預設 800×600）
- * - preserveAspectRatio="xMidYMid meet" 讓圖片按比例縮放並置中
- * - ImageLayer 在底層（背景）
- * - 之後的 VertexLayer、ShapeLayer 會疊在上面
- */
+// 下一個可用的字母標籤（A → B → C → ...）
+function nextLabel(existing: string[]): string {
+  const used = new Set(existing);
+  for (let i = 0; i < 26; i++) {
+    const label = String.fromCharCode(65 + i);
+    if (!used.has(label)) return label;
+  }
+  return '?';
+}
+
 export function Canvas() {
+  const svgRef = useRef<SVGSVGElement>(null);
   const image = useSceneStore((s) => s.image);
+  const vertices = useSceneStore((s) => s.vertices);
+  const addVertex = useSceneStore((s) => s.addVertex);
 
   const width = image?.naturalWidth ?? 800;
   const height = image?.naturalHeight ?? 600;
 
+  const handleBackgroundClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    // 只處理「點在背景」：SVG 本身或圖片上；其他元素（頂點）會 stopPropagation
+    const target = e.target as Element;
+    if (target !== e.currentTarget && target.tagName !== 'image') return;
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const world = screenToWorld(svg, e.clientX, e.clientY);
+    const scale = getSvgScale(svg);
+    const worldEpsilon = worldEpsilonFromScale(scale);
+
+    // 點在既有頂點附近 → 不新增
+    if (findSnapTarget(world, vertices, worldEpsilon)) return;
+
+    const name = nextLabel(vertices.map((v) => v.name));
+    addVertex({
+      id: crypto.randomUUID(),
+      name,
+      position: world,
+    });
+  };
+
   return (
     <svg
+      ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
+      onClick={handleBackgroundClick}
       style={{
         width: '100%',
         height: '100%',
@@ -27,6 +65,7 @@ export function Canvas() {
       }}
     >
       <ImageLayer />
+      <VertexLayer />
     </svg>
   );
 }
