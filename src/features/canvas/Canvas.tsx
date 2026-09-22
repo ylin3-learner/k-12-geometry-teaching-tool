@@ -1,71 +1,85 @@
 import { useRef } from 'react';
 import { ImageLayer } from './ImageLayer';
+import { ShapeLayer } from './ShapeLayer';
 import { VertexLayer } from './VertexLayer';
 import { useSceneStore } from '../../store/useSceneStore';
 import {
-  screenToWorld,
-  getSvgScale,
-  worldEpsilonFromScale,
+    screenToWorld,
+    getSvgScale,
+    worldEpsilonFromScale,
 } from '../../domain/interaction/screen';
 import { findSnapTarget } from '../../domain/interaction/snapVertex';
 
-// 下一個可用的字母標籤（A → B → C → ...）
+// 下一個可用的字母標籤（A → B → C → ...），僅在 idle 模式使用
 function nextLabel(existing: string[]): string {
-  const used = new Set(existing);
-  for (let i = 0; i < 26; i++) {
-    const label = String.fromCharCode(65 + i);
-    if (!used.has(label)) return label;
-  }
-  return '?';
+    const used = new Set(existing);
+    for (let i = 0; i < 26; i++) {
+        const label = String.fromCharCode(65 + i);
+        if (!used.has(label)) return label;
+    }
+    return '?';
 }
 
 export function Canvas() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const image = useSceneStore((s) => s.image);
-  const vertices = useSceneStore((s) => s.vertices);
-  const addVertex = useSceneStore((s) => s.addVertex);
+    const svgRef = useRef<SVGSVGElement>(null);
+    const image = useSceneStore((s) => s.image);
+    const vertices = useSceneStore((s) => s.vertices);
+    const mode = useSceneStore((s) => s.mode);
+    const namingQueue = useSceneStore((s) => s.namingQueue);
+    const addVertex = useSceneStore((s) => s.addVertex);
+    const setNamingQueue = useSceneStore((s) => s.setNamingQueue);
 
-  const width = image?.naturalWidth ?? 800;
-  const height = image?.naturalHeight ?? 600;
+    const width = image?.naturalWidth ?? 800;
+    const height = image?.naturalHeight ?? 600;
 
-  const handleBackgroundClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    // 只處理「點在背景」：SVG 本身或圖片上；其他元素（頂點）會 stopPropagation
-    const target = e.target as Element;
-    if (target !== e.currentTarget && target.tagName !== 'image') return;
+    const handleBackgroundClick = (e: React.MouseEvent<SVGSVGElement>) => {
+        const target = e.target as Element;
+        if (target !== e.currentTarget && target.tagName !== 'image') return;
 
-    const svg = svgRef.current;
-    if (!svg) return;
+        const svg = svgRef.current;
+        if (!svg) return;
 
-    const world = screenToWorld(svg, e.clientX, e.clientY);
-    const scale = getSvgScale(svg);
-    const worldEpsilon = worldEpsilonFromScale(scale);
+        const world = screenToWorld(svg, e.clientX, e.clientY);
+        const scale = getSvgScale(svg);
+        const worldEpsilon = worldEpsilonFromScale(scale);
 
-    // 點在既有頂點附近 → 不新增
-    if (findSnapTarget(world, vertices, worldEpsilon)) return;
+        // 點在既有頂點附近 → 不新增
+        if (findSnapTarget(world, vertices, worldEpsilon)) return;
 
-    const name = nextLabel(vertices.map((v) => v.name));
-    addVertex({
-      id: crypto.randomUUID(),
-      name,
-      position: world,
-    });
-  };
+        // 依 mode 決定新頂點的名字
+        let name: string;
+        if (mode === 'guided-naming' && namingQueue.length > 0) {
+            name = namingQueue[0];
+            setNamingQueue(namingQueue.slice(1));
+        } else if (mode === 'idle' || mode === 'manual-naming') {
+            name = nextLabel(vertices.map((v) => v.name));
+        } else {
+            return;   // 其他模式不處理背景點擊
+        }
 
-  return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="xMidYMid meet"
-      onClick={handleBackgroundClick}
-      style={{
-        width: '100%',
-        height: '100%',
-        background: '#fafafa',
-        display: 'block',
-      }}
-    >
-      <ImageLayer />
-      <VertexLayer />
-    </svg>
-  );
+        addVertex({
+            id: crypto.randomUUID(),
+            name,
+            position: world,
+        });
+    };
+
+    return (
+        <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="xMidYMid meet"
+            onClick={handleBackgroundClick}
+            style={{
+                width: '100%',
+                height: '100%',
+                background: '#fafafa',
+                display: 'block',
+            }}
+        >
+            <ImageLayer />
+            <ShapeLayer />         {/* 新增：形狀在底層 */}
+            <VertexLayer />        {/* 頂點在上層 */}
+        </svg>
+    );
 }
