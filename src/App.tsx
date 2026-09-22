@@ -3,6 +3,8 @@ import { PasteHandler } from './features/input/PasteHandler';
 import { TextInput } from './features/input/TextInput';
 import { GuidedNaming } from './features/parser/GuidedNaming';
 import { UnresolvedList } from './features/parser/UnresolvedList';
+import { EmptyDefinitionsHint } from './features/parser/EmptyDefinitionsHint';
+import { ManualLinkControl } from './features/controls/ManualLinkControl';
 import './App.css';
 
 function App() {
@@ -17,9 +19,9 @@ function App() {
             <TextInput />
           </section>
 
+          <EmptyDefinitionsHint />
           <UnresolvedList />
-
-          {/* 步驟 4 之後會加 ManualLinkControl 到這裡 */}
+          <ManualLinkControl />
         </aside>
 
         <main className="canvas-container">

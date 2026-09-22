@@ -43,18 +43,17 @@ export function Canvas() {
         const scale = getSvgScale(svg);
         const worldEpsilon = worldEpsilonFromScale(scale);
 
-        // 點在既有頂點附近 → 不新增
         if (findSnapTarget(world, vertices, worldEpsilon)) return;
 
-        // 依 mode 決定新頂點的名字
         let name: string;
         if (mode === 'guided-naming' && namingQueue.length > 0) {
             name = namingQueue[0];
             setNamingQueue(namingQueue.slice(1));
-        } else if (mode === 'idle' || mode === 'manual-naming') {
+        } else if (mode === 'manual-linking') {
+            // 手動連線模式：允許新增頂點，自動命名
             name = nextLabel(vertices.map((v) => v.name));
         } else {
-            return;   // 其他模式不處理背景點擊
+            return;   // idle：不加頂點
         }
 
         addVertex({

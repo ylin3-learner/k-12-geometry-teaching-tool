@@ -190,3 +190,110 @@ html, body, #root {
 .unresolved-item__fix:hover {
   background: #3a7bc8;
 }
+
+/* ── 通用按鈕 ── */
+.btn-primary {
+  width: 100%;
+  padding: 8px 12px;
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3a7bc8;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  padding: 8px 12px;
+  background: transparent;
+  color: #4a90e2;
+  border: 1px solid #4a90e2;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: rgba(74, 144, 226, 0.08);
+}
+
+/* ── 手動連線面板 ── */
+.manual-link-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: #f5f9ff;
+  border: 1px solid #c8e0ff;
+  border-radius: 6px;
+}
+
+.manual-link-panel__sequence {
+  font-size: 13px;
+  color: #333;
+  min-height: 20px;
+}
+
+.manual-link-panel__sequence code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #1e40af;
+}
+
+.manual-link-panel__sequence .muted {
+  color: #888;
+  font-size: 12px;
+}
+
+.manual-link-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-link-panel__actions .btn-primary {
+  flex: 1;
+}
+
+.manual-link-panel__error {
+  color: #c0392b;
+  font-size: 12px;
+}
+
+/* ── 「只貼題幹」中性提示 ── */
+.info-banner {
+  padding: 12px;
+  background: #eef5fd;
+  border: 1px solid #c8e0ff;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-banner__text {
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.info-banner__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.info-banner__actions .btn-primary {
+  flex: 1;
+}
