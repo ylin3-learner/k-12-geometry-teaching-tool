@@ -83,6 +83,7 @@ export type Scene = {
   connections: Connection[];
   mode: 'idle' | 'guided-naming' | 'manual-naming' | 'manual-linking' | 'exploding';
   namingQueue: string[];
+  namingTotal: number;          // 新增：本輪命名總共要點幾個字母
   currentManualShape: string[];
 };
 

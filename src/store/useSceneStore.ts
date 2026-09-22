@@ -19,6 +19,7 @@ const INITIAL_SCENE: Scene = {
   connections: [],
   mode: 'idle',
   namingQueue: [],
+  namingTotal: 0,
   currentManualShape: [],
 };
 
@@ -46,6 +47,7 @@ type SceneStore = Scene & {
   // 模式
   setMode: (mode: Scene['mode']) => void;
   setNamingQueue: (q: string[]) => void;
+  setNamingTotal: (n: number) => void;   // 新增
   setCurrentManualShape: (ids: string[]) => void;
 
   // 重置整個場景
@@ -79,6 +81,7 @@ export const useSceneStore = create<SceneStore>((set) => ({
 
   setMode: (mode) => set({ mode }),
   setNamingQueue: (namingQueue) => set({ namingQueue }),
+  setNamingTotal: (namingTotal) => set({ namingTotal }),   // 新增
   setCurrentManualShape: (currentManualShape) => set({ currentManualShape }),
 
   reset: () => set(INITIAL_SCENE),

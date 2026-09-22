@@ -7,6 +7,8 @@ html, body, #root {
   padding: 0;
   height: 100%;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* 防止任何子元素把整個頁面撐出橫向滾動條 */
+  overflow: hidden;
 }
 
 .app {
@@ -16,17 +18,131 @@ html, body, #root {
   background: #f0f0f0;
 }
 
-.canvas-container {
+/* ── 主要區域：左右雙欄 ── */
+.main {
   flex: 1;
+  display: flex;
   overflow: hidden;
-  padding: 16px;
+  min-height: 0;         /* flex 子項預設 min-height:auto，防止內容撐開 */
 }
 
+/* ── 左側 panel（固定 320px）── */
+.sidebar {
+  flex: 0 0 320px;       /* 關鍵：flex-basis 明確 320px，不放大不縮小 */
+  min-width: 0;          /* 關鍵：允許被壓縮，不被內容撐開 */
+  max-width: 320px;      /* 額外保險 */
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sidebar__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── 右側 canvas 區域（撐滿剩餘空間）── */
+.canvas-container {
+  flex: 1 1 0;           /* 關鍵：flex-basis 設 0，不受內容影響 */
+  min-width: 0;          /* 關鍵：允許壓縮 */
+  overflow: hidden;
+  padding: 16px;
+  position: relative;
+}
+
+/* ── 題目文字輸入框 ── */
+.text-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  color: #222;              /* 明確色，避免 dark mode 汙染 */
+  background: #fff;         /* 明確色，避免 dark mode 汙染 */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+}
+
+.text-input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.text-input::placeholder {
+  color: #aaa;
+}
+
+/* ── 底部提示 ── */
 .hint {
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: #fff;
   border-top: 1px solid #e0e0e0;
   text-align: center;
   color: #666;
+  font-size: 13px;
+}
+
+/* ── 引導式點名 overlay（不需要改）── */
+.guided-naming {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4a90e2;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 16px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.guided-naming__text strong {
+  font-size: 20px;
+  margin: 0 4px;
+}
+
+.guided-naming__progress {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 10px;
+  border-radius: 4px;
   font-size: 14px;
 }
+
+.guided-naming__skip {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.guided-naming__skip:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
