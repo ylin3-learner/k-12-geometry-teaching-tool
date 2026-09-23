@@ -444,3 +444,10 @@ html, body, #root {
 .btn-ghost:disabled:hover {
   background: transparent;
 }
+
+/* ── 爆炸控制 ── */
+.explode-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

@@ -5,15 +5,17 @@ import type { Vertex } from '../../domain/parser/types';
 /**
  * 共用頂點光環：在形狀共用點上畫一個脈衝圓環。
  *
- * 視覺層級：在 ShapeLayer 之上、VertexLayer 之下——
- * 光環是「背景光暈」，不能遮住紅點（互動點）。
- *
- * 動畫用 SVG <animate>——瀏覽器原生支援，不需 JS 執行迴圈。
+ * 爆炸時隱藏——「共用」的視覺語義在形狀分開後消失。
+ * 收回爆炸時光環重新出現。
  */
 export function SharedVertexHalo() {
   const connections = useSceneStore((s) => s.connections);
   const shapes = useSceneStore((s) => s.shapes);
   const vertices = useSceneStore((s) => s.vertices);
+  const explodeProgress = useSceneStore((s) => s.explodeProgress);
+
+  // 爆炸時（progress > 0.05）不顯示光環
+  if (explodeProgress > 0.05) return null;
 
   const visibleShapeIds = new Set(
     shapes.filter((s) => s.visible).map((s) => s.id),

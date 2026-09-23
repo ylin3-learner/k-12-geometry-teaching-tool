@@ -8,6 +8,8 @@ import { EmptyDefinitionsHint } from './features/parser/EmptyDefinitionsHint';
 import { ManualLinkControl } from './features/controls/ManualLinkControl';
 import { LayerPanel } from './features/controls/LayerPanel';
 import { ResetButton } from './features/controls/ResetButton';   // 新增
+import { ExplodeControl } from './features/controls/ExplodeControl';
+
 import './App.css';
 
 function App() {
@@ -32,6 +34,7 @@ function App() {
           <EmptyDefinitionsHint />
           <ManualLinkControl />
           <LayerPanel />
+          <ExplodeControl />
         </aside>
 
         <main className="canvas-container">

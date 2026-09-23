@@ -1,35 +1,54 @@
 import { useSceneStore } from '../../store/useSceneStore';
-import type { Vertex } from '../../domain/parser/types';
+import {
+  computeShapeOffsets,
+  computeShapeVertexPositions,
+  resolveExplodeDistanceByShape,
+} from '../../domain/graph/computeExplodeOffsets';
 
-/**
- * 形狀圖層：把 Shape[] 渲染成 SVG <polygon>。
- *
- * 層序：在 ImageLayer 之上、VertexLayer 之下——
- * 形狀填色不應該蓋住頂點的紅點與標籤。
- */
 export function ShapeLayer() {
   const shapes = useSceneStore((s) => s.shapes);
   const vertices = useSceneStore((s) => s.vertices);
+  const explodeProgress = useSceneStore((s) => s.explodeProgress);
+  const image = useSceneStore((s) => s.image);
 
-  // vertex.id → Vertex 查找表
-  const byId = new Map<string, Vertex>(vertices.map((v) => [v.id, v]));
+  const imageW = image?.naturalWidth ?? 800;
+  const imageH = image?.naturalHeight ?? 600;
+  const padding = Math.min(imageW, imageH) * 0.03;   // 圖片短邊 3%
+
+  const offsets = computeShapeOffsets(shapes, vertices);
+  const distance = resolveExplodeDistanceByShape(
+    shapes,
+    vertices,
+    offsets,
+    imageW,
+    imageH,
+    padding,
+    3.0,   // ← 明確指定 separationFactor
+  );
+  const shapePositions = computeShapeVertexPositions(
+    shapes,
+    vertices,
+    offsets,
+    distance,
+    explodeProgress,
+  );
 
   return (
     <g>
       {shapes.map((shape) => {
         if (!shape.visible) return null;
 
-        const positions = shape.vertexIds
-          .map((id) => byId.get(id))
-          .filter((v): v is Vertex => v !== undefined);
+        const inner = shapePositions.get(shape.id);
+        if (!inner) return null;
 
-        if (positions.length !== shape.vertexIds.length) {
-          // 理論上不該發生——resolve 階段已檢查座標齊全
-          return null;
-        }
+        const positions = shape.vertexIds
+          .map((id) => inner.get(id))
+          .filter((p): p is { x: number; y: number } => p !== undefined);
+
+        if (positions.length !== shape.vertexIds.length) return null;
 
         const points = positions
-          .map((v) => `${v.position.x},${v.position.y}`)
+          .map((p) => `${p.x},${p.y}`)
           .join(' ');
 
         return (

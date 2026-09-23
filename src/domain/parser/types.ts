@@ -85,6 +85,7 @@ export type Scene = {
   namingQueue: string[];
   namingTotal: number;          // 新增：本輪命名總共要點幾個字母
   currentManualShape: string[];
+  explodeProgress: number;      // 新增：0 = 原始位置，1 = 完全爆炸
 };
 
 // ── OCR 狀態（Sprint 2.5 用，先佔位避免 Scene 無法編譯）──

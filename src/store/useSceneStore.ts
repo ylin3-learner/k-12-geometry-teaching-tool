@@ -27,6 +27,7 @@ const INITIAL_SCENE: Scene = {
     namingQueue: [],
     namingTotal: 0,
     currentManualShape: [],
+    explodeProgress: 0,
 };
 
 // ── Pipeline：從文字推導出 Parser 相關狀態 ──
@@ -84,6 +85,8 @@ type SceneStore = Scene & {
     setNamingQueue: (q: string[]) => void;
     setNamingTotal: (n: number) => void;
     setCurrentManualShape: (ids: string[]) => void;
+
+    setExplodeProgress: (p: number) => void;
 
     resetAnnotations: () => void;
     reset: () => void;
@@ -149,6 +152,8 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     setNamingQueue: (namingQueue) => set({ namingQueue }),
     setNamingTotal: (namingTotal) => set({ namingTotal }),
     setCurrentManualShape: (currentManualShape) => set({ currentManualShape }),
+    
+    setExplodeProgress: (explodeProgress) => set({ explodeProgress }),
 
     resetAnnotations: () =>
         set((state) => {
@@ -159,6 +164,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
                 shapes: [],
                 connections: [],
                 currentManualShape: [],
+                explodeProgress: 0,
                 ...pipeline,
             };
         }),
