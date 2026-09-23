@@ -22,7 +22,7 @@ export function UnresolvedList() {
       <ul className="unresolved-list">
         {unresolved.map((fragment, i) => (
           <li key={i} className="unresolved-item">
-            <code className="unresolved-item__text">{fragment}</code>
+            <span className="unresolved-item__text">{fragment}</span>
             {looksLikeTriangleDecl(fragment) && (
               <button
                 type="button"

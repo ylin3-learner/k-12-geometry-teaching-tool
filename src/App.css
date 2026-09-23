@@ -8,6 +8,7 @@ html, body, #root {
   height: 100%;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   /* 防止任何子元素把整個頁面撐出橫向滾動條 */
+  color-scheme: light;      /* 新增：強制淺色模式，避免 UA dark mode 污染 */
   overflow: hidden;
 }
 
@@ -171,6 +172,7 @@ html, body, #root {
 .unresolved-item__text {
   font-family: ui-monospace, 'SF Mono', Consolas, monospace;
   color: #7a5a00;
+  background: transparent;
   word-break: break-all;
 }
 
@@ -245,7 +247,8 @@ html, body, #root {
   min-height: 20px;
 }
 
-.manual-link-panel__sequence code {
+.manual-link-sequence {
+  display: inline-block;
   font-family: ui-monospace, 'SF Mono', Consolas, monospace;
   background: #fff;
   padding: 2px 6px;
@@ -341,4 +344,69 @@ html, body, #root {
   padding: 1px 6px;
   background: #f0f0f0;
   border-radius: 3px;
+}
+
+/* ── Parser 解析結果 ── */
+.parser-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #fafafa;
+  border-radius: 4px;
+  border-left: 3px solid #ccc;
+}
+
+.parser-group--def { border-left-color: #4caf50; }   /* 定義：綠 */
+.parser-group--aux { border-left-color: #9e9e9e; }   /* 輔助：灰 */
+.parser-group--con { border-left-color: #2196f3; }   /* 約束：藍 */
+
+.parser-group + .parser-group {
+  margin-top: 6px;
+}
+
+.parser-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.parser-group__title {
+  color: #444;
+}
+
+.parser-group__count {
+  background: #e8e8e8;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  color: #555;
+}
+
+.parser-group__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parser-group__item {
+  padding: 3px 6px;
+  font-size: 13px;
+  background: #fff;
+  border-radius: 3px;
+}
+
+.parser-group__source {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  color: #222;
+  background: transparent;
+  word-break: break-all;
 }

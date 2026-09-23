@@ -68,10 +68,10 @@ export function ManualLinkControl() {
                         ) : currentManualShape.length < 3 ? (
                             <span>
                                 已選 {currentManualShape.length} / 3 個：
-                                <code>{displayNames}</code>
+                                <span className="manual-link-sequence">{displayNames}</span>
                             </span>
                         ) : (
-                            <code>{displayNames}</code>
+                            <span className="manual-link-sequence">{displayNames}</span>
                         )}
                     </div>
 
