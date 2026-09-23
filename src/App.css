@@ -489,3 +489,60 @@ html, body, #root {
   color: #1e40af;
   text-align: center;
 }
+
+/* ── 題目文字輸入區 ── */
+.text-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.symbol-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.symbol-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.symbol-toolbar__divider {
+  width: 1px;
+  height: 20px;
+  background: #ddd;
+  margin: 0 4px;
+}
+
+.symbol-toolbar__btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 15px;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.symbol-toolbar__btn:hover {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #4a90e2;
+}
+
+.symbol-toolbar__btn:active {
+  transform: scale(0.95);
+}
