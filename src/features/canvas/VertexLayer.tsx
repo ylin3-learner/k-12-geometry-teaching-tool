@@ -14,8 +14,8 @@ import {
 import type { Vertex } from '../../domain/parser/types';
 
 type RenderPoint = {
-  key: string;            // shapeId + vertexId（唯一）
-  vertexId: string;       // 資料層的 vertex id（拖曳/選取用）
+  key: string;
+  vertexId: string;
   name: string;
   x: number;
   y: number;
@@ -30,17 +30,13 @@ export function VertexLayer() {
   const currentManualShape = useSceneStore((s) => s.currentManualShape);
   const setCurrentManualShape = useSceneStore((s) => s.setCurrentManualShape);
   const explodeProgress = useSceneStore((s) => s.explodeProgress);
-
-  const rotationShapeId = useSceneStore((s) => s.rotationShapeId);
-  const rotationPivotId = useSceneStore((s) => s.rotationPivotId);
-  const rotationAngle = useSceneStore((s) => s.rotationAngle);
+  const selectedShapeIds = useSceneStore((s) => s.selectedShapeIds);
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [snapFlashId, setSnapFlashId] = useState<string | null>(null);
 
   const isLinking = mode === 'manual-linking';
 
-  // 計算每個形狀的每個頂點顯示位置
   const image = useSceneStore((s) => s.image);
 
   const imageW = image?.naturalWidth ?? 800;
@@ -55,26 +51,25 @@ export function VertexLayer() {
     imageW,
     imageH,
     padding,
-    3.0,   // ← 明確指定 separationFactor
+    3.0,
   );
-
-  const rotation = rotationShapeId && rotationPivotId
-    ? { shapeId: rotationShapeId, pivotId: rotationPivotId, angle: rotationAngle }
-    : undefined;
-
   const shapePositions = computeShapeVertexPositions(
-    shapes, vertices, offsets, distance, explodeProgress, rotation,
+    shapes,
+    vertices,
+    offsets,
+    distance,
+    explodeProgress,
   );
 
-  // 組出要渲染的點清單：每個形狀的每個頂點一份
-  // progress = 0 時所有副本重疊；progress = 1 時分開
   const byId = new Map<string, Vertex>(vertices.map((v) => [v.id, v]));
-
   const renderPoints: RenderPoint[] = [];
   const visibleShapes = shapes.filter((s) => s.visible);
 
+  const isExplodingWithSelection =
+    explodeProgress > 0.05 && selectedShapeIds.length > 0;
+
   if (visibleShapes.length === 0) {
-    // 沒有可見形狀時，直接按原始頂點渲染（例如手動連線模式剛開始）
+    // 沒有可見形狀（手動連線模式剛開始）→ 顯示所有原始頂點
     for (const v of vertices) {
       renderPoints.push({
         key: v.id,
@@ -84,8 +79,30 @@ export function VertexLayer() {
         y: v.position.y,
       });
     }
+  } else if (isExplodingWithSelection) {
+    // 爆炸中且有選取 → 只顯示選中形狀的頂點（其他全部隱藏）
+    const focusShapes = visibleShapes.filter((s) =>
+      selectedShapeIds.includes(s.id),
+    );
+    for (const s of focusShapes) {
+      const inner = shapePositions.get(s.id);
+      if (!inner) continue;
+      for (const vid of s.vertexIds) {
+        const pos = inner.get(vid);
+        const v = byId.get(vid);
+        if (!pos || !v) continue;
+        renderPoints.push({
+          key: `${s.id}:${vid}`,
+          vertexId: vid,
+          name: v.name,
+          x: pos.x,
+          y: pos.y,
+        });
+      }
+    }
+    // 不補孤立頂點——爆炸中不需要看到它們
   } else {
-    // 有可見形狀時，按形狀渲染頂點（每個形狀一份）
+    // 一般狀態：所有可見形狀的頂點 + 孤立頂點
     for (const s of visibleShapes) {
       const inner = shapePositions.get(s.id);
       if (!inner) continue;
@@ -103,7 +120,6 @@ export function VertexLayer() {
       }
     }
 
-    // 補上不屬於任何可見形狀的孤立頂點
     const inAnyShape = new Set<string>();
     for (const s of visibleShapes) {
       for (const vid of s.vertexIds) inAnyShape.add(vid);

@@ -2,20 +2,27 @@ import { useSceneStore } from '../../store/useSceneStore';
 
 const DURATION_MS = 600;
 
-/**
- * 爆炸圖控制：
- * - 「爆炸」按鈕 → progress 0 → 1
- * - 「重置」按鈕 → progress → 0
- *
- * 用 requestAnimationFrame 做數值插值。
- * 不用 CSS transition 是因為 SVG 的 point/cx/cy 屬性無法被 CSS transition 插值。
- */
 export function ExplodeControl() {
   const progress = useSceneStore((s) => s.explodeProgress);
   const setProgress = useSceneStore((s) => s.setExplodeProgress);
-  const shapesCount = useSceneStore((s) => s.shapes.length);
+  const shapes = useSceneStore((s) => s.shapes);
+  const selectedShapeIds = useSceneStore((s) => s.selectedShapeIds);
 
-  const disabled = shapesCount < 2;   // 少於 2 個形狀沒得爆炸
+  // 計算「參與爆炸的形狀」
+  // 有選取 → 用選中的；沒選 → 用所有可見的
+  const visibleShapes = shapes.filter((s) => s.visible);
+  const eligibleShapes =
+    selectedShapeIds.length > 0
+      ? visibleShapes.filter((s) => selectedShapeIds.includes(s.id))
+      : visibleShapes;
+
+  const disabled = eligibleShapes.length < 2;
+  const reason =
+    selectedShapeIds.length > 0 && eligibleShapes.length < 2
+      ? '需要至少選中 2 個可見圖層'
+      : visibleShapes.length < 2
+        ? '需要至少 2 個可見圖層'
+        : '';
 
   const animateTo = (target: number) => {
     const start = progress;
@@ -35,7 +42,14 @@ export function ExplodeControl() {
 
   return (
     <section className="sidebar__section">
-      <label className="sidebar__label">爆炸圖</label>
+      <label className="sidebar__label">
+        爆炸圖
+        {selectedShapeIds.length > 0 && (
+          <span className="sidebar__label__hint">
+            （{selectedShapeIds.length} 個選中）
+          </span>
+        )}
+      </label>
       <div className="explode-control">
         <button
           type="button"
@@ -48,7 +62,7 @@ export function ExplodeControl() {
       </div>
       {disabled && (
         <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-          需要至少 2 個形狀
+          {reason}
         </div>
       )}
     </section>
@@ -56,7 +70,5 @@ export function ExplodeControl() {
 }
 
 function easeInOutCubic(t: number): number {
-  return t < 0.5
-    ? 4 * t * t * t
-    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }

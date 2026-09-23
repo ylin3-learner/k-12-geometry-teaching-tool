@@ -31,6 +31,7 @@ const INITIAL_SCENE: Scene = {
     rotationShapeId: null,
     rotationPivotId: null,
     rotationAngle: 0,
+    selectedShapeIds: [],
 };
 
 // 計算 Shape 的 bbox 對角線（用來判斷「哪個圖形較小」）
@@ -112,6 +113,9 @@ type SceneStore = Scene & {
     setRotationAngle: (angle: number) => void;
     stopRotation: () => void;
 
+    toggleShapeSelection: (id: string) => void;
+    clearShapeSelection: () => void;
+
     resetAnnotations: () => void;
     reset: () => void;
 };
@@ -184,31 +188,47 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
 
         const byId = new Map(state.vertices.map((v) => [v.id, v]));
 
-        // 找較小的圖形（bbox 對角線較短者）
-        let smallest = visibleShapes[0];
-        let smallestDiag = Infinity;
-        for (const s of visibleShapes) {
-            const diag = bboxDiagonal(s, byId);
-            if (diag < smallestDiag) {
-                smallestDiag = diag;
-                smallest = s;
+        // 決定要旋轉的形狀：
+        // 1. 若恰好選中 1 個可見形狀 → 用它
+        // 2. 否則自動選最小的
+        const selectedVisible = visibleShapes.filter((s) =>
+            state.selectedShapeIds.includes(s.id),
+        );
+
+        let target: Shape;
+        if (selectedVisible.length === 1) {
+            target = selectedVisible[0];
+        } else if (selectedVisible.length === 0) {
+            // 自動選最小的
+            let smallest = visibleShapes[0];
+            let smallestDiag = Infinity;
+            for (const s of visibleShapes) {
+                const diag = bboxDiagonal(s, byId);
+                if (diag < smallestDiag) {
+                    smallestDiag = diag;
+                    smallest = s;
+                }
             }
+            target = smallest;
+        } else {
+            // 選了多個 → 錯誤（呼叫端應該先擋）
+            return;
         }
 
-        // 找與它相關的共用頂點作為 pivot
+        // 找 pivot：跟 target 相關的共用頂點
         const conn = state.connections.find(
-            (c) => c.shapeA === smallest.id || c.shapeB === smallest.id,
+            (c) => c.shapeA === target.id || c.shapeB === target.id,
         );
         if (!conn || conn.sharedVertexIds.length === 0) return;
 
         set({
-            rotationShapeId: smallest.id,
+            rotationShapeId: target.id,
             rotationPivotId: conn.sharedVertexIds[0],
             rotationAngle: 0,
-            // 旋轉時強制合回原圖（避免兩個動畫同時作用）
             explodeProgress: 0,
         });
     },
+
 
     setRotationAngle: (rotationAngle) => set({ rotationAngle }),
 
@@ -218,6 +238,18 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
             rotationPivotId: null,
             rotationAngle: 0,
         }),
+
+    toggleShapeSelection: (id) =>
+        set((state) => {
+            const has = state.selectedShapeIds.includes(id);
+            return {
+                selectedShapeIds: has
+                    ? state.selectedShapeIds.filter((x) => x !== id)
+                    : [...state.selectedShapeIds, id],
+            };
+        }),
+
+    clearShapeSelection: () => set({ selectedShapeIds: [] }),
 
     setExplodeProgress: (explodeProgress) => set({ explodeProgress }),
 
@@ -233,6 +265,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
                 rotationShapeId: null,
                 rotationPivotId: null,
                 rotationAngle: 0,
+                selectedShapeIds: [],
                 ...pipeline,
             };
         }),

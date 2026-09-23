@@ -90,6 +90,9 @@ export type Scene = {
   rotationShapeId: string | null;    // 要旋轉的 Shape id
   rotationPivotId: string | null;    // pivot 的 Vertex id（共用頂點）
   rotationAngle: number;             // 旋轉角度（度），0 = 不旋轉
+
+  // 新增：使用者在 LayerPanel 選中的形狀
+  selectedShapeIds: string[];
 };
 
 // ── OCR 狀態（Sprint 2.5 用，先佔位避免 Scene 無法編譯）──
