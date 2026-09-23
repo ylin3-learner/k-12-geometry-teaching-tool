@@ -42,7 +42,7 @@ export function computeShapeOffsets(
 
   const byId = new Map(vertices.map((v) => [v.id, v]));
 
-  // 每個形狀的質心
+  // ── 每個形狀的質心 ──
   const centroids = new Map<string, Point>();
   for (const s of visible) {
     const pts = s.vertexIds
@@ -52,21 +52,66 @@ export function computeShapeOffsets(
     centroids.set(s.id, averagePoint(pts.map((v) => v.position)));
   }
 
-  // 全體質心
-  const globalCentroid = averagePoint(Array.from(centroids.values()));
+  // ── 統計每個頂點被多少可見形狀引用 ──
+  const refCount = new Map<string, number>();
+  for (const s of visible) {
+    for (const vid of s.vertexIds) {
+      refCount.set(vid, (refCount.get(vid) ?? 0) + 1);
+    }
+  }
 
-  // 每個形狀：從全體質心往自身質心的單位向量
-  for (const [shapeId, c] of centroids) {
+  let maxRef = 0;
+  for (const c of refCount.values()) {
+    if (c > maxRef) maxRef = c;
+  }
+
+  // ── 有共用頂點（maxRef ≥ 2）→ 均勻扇開 ──
+  if (maxRef >= 2) {
+    // 主錨點 = 所有被「maxRef 個形狀共享」的頂點的質心
+    const anchorIds = Array.from(refCount.entries())
+      .filter(([, c]) => c === maxRef)
+      .map(([id]) => id);
+    const anchorPts = anchorIds
+      .map((id) => byId.get(id)?.position)
+      .filter((p): p is Point => !!p);
+    const anchorPos = averagePoint(anchorPts);
+
+    // 按「質心相對主錨點的角度」排序
+    const sorted = [...visible].sort((a, b) => {
+      const ca = centroids.get(a.id)!;
+      const cb = centroids.get(b.id)!;
+      return (
+        Math.atan2(ca.y - anchorPos.y, ca.x - anchorPos.x) -
+        Math.atan2(cb.y - anchorPos.y, cb.x - anchorPos.x)
+      );
+    });
+
+    // 起始角度 = 排序後第一個形狀的原始方向（避免瞬間跳位）
+    const c0 = centroids.get(sorted[0].id)!;
+    const startAngle = Math.atan2(c0.y - anchorPos.y, c0.x - anchorPos.x);
+    const step = (2 * Math.PI) / sorted.length;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const angle = startAngle + step * i;
+      result.set(sorted[i].id, { x: Math.cos(angle), y: Math.sin(angle) });
+    }
+
+    return result;
+  }
+
+  // ── 沒有共用頂點 → 離心法（保留原邏輯）──
+  const globalCentroid = averagePoint(Array.from(centroids.values()));
+  for (const s of visible) {
+    const c = centroids.get(s.id)!;
     const dx = c.x - globalCentroid.x;
     const dy = c.y - globalCentroid.y;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len < 1e-6) {
-      // 退化情況（形狀質心恰好等於全體質心）→ 用角度扇開
-      const idx = visible.findIndex((s) => s.id === shapeId);
+      const idx = visible.findIndex((v) => v.id === s.id);
       const angle = (idx / visible.length) * 2 * Math.PI;
-      result.set(shapeId, { x: Math.cos(angle), y: Math.sin(angle) });
+      result.set(s.id, { x: Math.cos(angle), y: Math.sin(angle) });
     } else {
-      result.set(shapeId, { x: dx / len, y: dy / len });
+      result.set(s.id, { x: dx / len, y: dy / len });
     }
   }
 
