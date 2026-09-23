@@ -6,6 +6,7 @@ export type RotationState = {
   shapeId: string;
   pivotId: string;
   angle: number;   // 度
+  flipped: boolean;   // 新增
 };
 
 /**
@@ -153,8 +154,29 @@ export function computeShapeVertexPositions(
       let pos: Point = { ...v.position };
 
       // 2. 若此形狀要旋轉 → 繞 pivot 旋轉
-      if (isRotating && pivotPos) {
-        pos = rotateAround(pos, pivotPos, rotation!.angle);
+      if (isRotating && pivotPos && rotation) {
+        // 步驟 1：旋轉
+        pos = rotateAround(pos, pivotPos, rotation.angle);
+
+        // 步驟 2：若啟用翻轉，沿「旋轉後的 pivot→next」軸鏡像
+        if (rotation.flipped) {
+          const shape = shapes.find((sh) => sh.id === rotation.shapeId);
+          if (shape) {
+            const idx = shape.vertexIds.indexOf(rotation.pivotId);
+            const nextId =
+              shape.vertexIds[(idx + 1) % shape.vertexIds.length];
+            const nextV = byId.get(nextId);
+            if (nextV) {
+              // 軸的另一端也要先旋轉
+              const rotatedAxisEnd = rotateAround(
+                nextV.position,
+                pivotPos,
+                rotation.angle,
+              );
+              pos = flipPoint(pos, pivotPos, rotatedAxisEnd);
+            }
+          }
+        }
       }
 
       // 3. 加上爆炸偏移（若有）
@@ -322,5 +344,27 @@ function rotateAround(p: Point, pivot: Point, angleDeg: number): Point {
   return {
     x: pivot.x + dx * cos - dy * sin,
     y: pivot.y + dx * sin + dy * cos,
+  };
+}
+
+// 沿「通過 pivot 與 axisEnd 的直線」鏡像一個點
+function flipPoint(p: Point, pivot: Point, axisEnd: Point): Point {
+  const dx = axisEnd.x - pivot.x;
+  const dy = axisEnd.y - pivot.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 < 1e-6) return p;
+
+  const px = p.x - pivot.x;
+  const py = p.y - pivot.y;
+
+  // 投影到軸上的純量
+  const t = (px * dx + py * dy) / len2;
+  const projX = t * dx;
+  const projY = t * dy;
+
+  // 鏡像：p' = 2 * proj - p
+  return {
+    x: pivot.x + 2 * projX - px,
+    y: pivot.y + 2 * projY - py,
   };
 }

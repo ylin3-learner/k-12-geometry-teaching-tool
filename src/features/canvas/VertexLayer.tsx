@@ -35,6 +35,7 @@ export function VertexLayer() {
   const rotationShapeId = useSceneStore((s) => s.rotationShapeId);
   const rotationPivotId = useSceneStore((s) => s.rotationPivotId);
   const rotationAngle = useSceneStore((s) => s.rotationAngle);
+  const rotationFlipped = useSceneStore((s) => s.rotationFlipped);  // 新增
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [snapFlashId, setSnapFlashId] = useState<string | null>(null);
@@ -54,7 +55,12 @@ export function VertexLayer() {
 
   const rotation =
     rotationShapeId && rotationPivotId
-      ? { shapeId: rotationShapeId, pivotId: rotationPivotId, angle: rotationAngle }
+      ? {
+          shapeId: rotationShapeId,
+          pivotId: rotationPivotId,
+          angle: rotationAngle,
+          flipped: rotationFlipped,   // 新增
+        }
       : undefined;
 
   const shapePositions = computeShapeVertexPositions(

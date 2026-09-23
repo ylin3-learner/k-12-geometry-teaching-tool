@@ -13,6 +13,7 @@ import { parse } from '../domain/parser/parser';
 import { classify } from '../domain/parser/classifier';
 import { collectRequiredLabels } from '../domain/semantic/collectRequiredLabels';
 import { findConnections } from '../domain/graph/connectivity';
+import { computeAutoAlignAngle } from '../domain/graph/computeAutoAlign';
 
 // ── 初始場景 ──
 const INITIAL_SCENE: Scene = {
@@ -31,6 +32,7 @@ const INITIAL_SCENE: Scene = {
     rotationShapeId: null,
     rotationPivotId: null,
     rotationAngle: 0,
+    rotationFlipped: false,    // 新增
     selectedShapeIds: [],
 };
 
@@ -111,7 +113,10 @@ type SceneStore = Scene & {
 
     startRotation: () => void;
     setRotationAngle: (angle: number) => void;
+    toggleRotationFlip: () => void;    // 新增
     stopRotation: () => void;
+
+    autoAlignRotation: () => void;
 
     toggleShapeSelection: (id: string) => void;
     clearShapeSelection: () => void;
@@ -225,6 +230,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
             rotationShapeId: target.id,
             rotationPivotId: conn.sharedVertexIds[0],
             rotationAngle: 0,
+            rotationFlipped: false,      // 新增：進入旋轉模式時重置
             explodeProgress: 0,
         });
     },
@@ -237,7 +243,40 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
             rotationShapeId: null,
             rotationPivotId: null,
             rotationAngle: 0,
+            rotationFlipped: false,      // 新增：離開旋轉模式時重置
         }),
+
+    toggleRotationFlip: () =>
+        set((state) => ({ rotationFlipped: !state.rotationFlipped })),
+
+    autoAlignRotation: () => {
+        const state = get();
+        const { rotationShapeId, rotationPivotId, shapes, vertices } = state;
+        if (!rotationShapeId || !rotationPivotId) return;
+
+        const rotating = shapes.find((s) => s.id === rotationShapeId);
+        if (!rotating) return;
+
+        const visible = shapes.filter((s) => s.visible);
+        const candidates = visible.filter((s) => s.id !== rotationShapeId);
+        if (candidates.length === 0) return;
+
+        // 優先找與 rotating 共享 pivot 的形狀（真正的對應目標）
+        const target =
+            candidates.find((s) => s.vertexIds.includes(rotationPivotId)) ??
+            candidates[0];
+
+        const angle = computeAutoAlignAngle(
+            rotating,
+            target,
+            rotationPivotId,
+            vertices,
+        );
+
+        if (angle !== null) {
+            set({ rotationAngle: Math.round(angle) });
+        }
+    },
 
     toggleShapeSelection: (id) =>
         set((state) => {
@@ -265,6 +304,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
                 rotationShapeId: null,
                 rotationPivotId: null,
                 rotationAngle: 0,
+                rotationFlipped: false,      // 新增
                 selectedShapeIds: [],
                 ...pipeline,
             };

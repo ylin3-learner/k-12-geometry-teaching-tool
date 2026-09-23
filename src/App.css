@@ -595,3 +595,27 @@ html, body, #root {
   letter-spacing: 0;
   margin-left: 4px;
 }
+
+.rotation-control__align {
+  font-weight: 600;
+  color: #4a90e2;
+  border-color: #4a90e2;
+}
+
+.rotation-control__align:hover {
+  background: rgba(74, 144, 226, 0.1);
+}
+
+.rotation-control__flip {
+  font-weight: 600;
+}
+
+.rotation-control__flip--active {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #4a90e2;
+}
+
+.rotation-control__flip--active:hover {
+  background: #3a7bc8;
+}

@@ -90,6 +90,7 @@ export type Scene = {
   rotationShapeId: string | null;    // 要旋轉的 Shape id
   rotationPivotId: string | null;    // pivot 的 Vertex id（共用頂點）
   rotationAngle: number;             // 旋轉角度（度），0 = 不旋轉
+  rotationFlipped: boolean;    // 新增：是否沿對稱軸翻轉
 
   // 新增：使用者在 LayerPanel 選中的形狀
   selectedShapeIds: string[];
