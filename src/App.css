@@ -297,3 +297,48 @@ html, body, #root {
 .info-banner__actions .btn-primary {
   flex: 1;
 }
+
+/* ── 圖層面板 ── */
+.layer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.layer-item {
+  padding: 6px 8px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.layer-item__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+}
+
+.layer-item__label input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.layer-item__name {
+  flex: 1;
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  color: #222;
+}
+
+.layer-item__source {
+  font-size: 11px;
+  color: #888;
+  padding: 1px 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+}

@@ -78,6 +78,7 @@ type SceneStore = Scene & {
 
     addShape: (shape: Shape) => void;
     removeShape: (id: string) => void;
+    toggleShape: (id: string) => void;
 
     setMode: (mode: Scene['mode']) => void;
     setNamingQueue: (q: string[]) => void;
@@ -129,6 +130,13 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
             const nextShapes = [...state.shapes, shape];
             return { shapes: nextShapes, connections: findConnections(nextShapes) };
         }),
+
+    toggleShape: (id) =>
+        set((state) => ({
+            shapes: state.shapes.map((s) =>
+                s.id === id ? { ...s, visible: !s.visible } : s,
+            ),
+        })),
 
     removeShape: (id) =>
         set((state) => {

@@ -5,6 +5,8 @@ import { GuidedNaming } from './features/parser/GuidedNaming';
 import { UnresolvedList } from './features/parser/UnresolvedList';
 import { EmptyDefinitionsHint } from './features/parser/EmptyDefinitionsHint';
 import { ManualLinkControl } from './features/controls/ManualLinkControl';
+import { LayerPanel } from './features/controls/LayerPanel';
+
 import './App.css';
 
 function App() {
@@ -22,6 +24,7 @@ function App() {
           <EmptyDefinitionsHint />
           <UnresolvedList />
           <ManualLinkControl />
+          <LayerPanel />
         </aside>
 
         <main className="canvas-container">
