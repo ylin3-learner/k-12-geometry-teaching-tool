@@ -85,6 +85,7 @@ type SceneStore = Scene & {
     setNamingTotal: (n: number) => void;
     setCurrentManualShape: (ids: string[]) => void;
 
+    resetAnnotations: () => void;
     reset: () => void;
 };
 
@@ -149,5 +150,17 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     setNamingTotal: (namingTotal) => set({ namingTotal }),
     setCurrentManualShape: (currentManualShape) => set({ currentManualShape }),
 
+    resetAnnotations: () =>
+        set((state) => {
+            // 保留 text 與 image；根據 text 重跑 pipeline 得到新的 namingQueue
+            const pipeline = runParserPipeline(state.text);
+            return {
+                vertices: [],
+                shapes: [],
+                connections: [],
+                currentManualShape: [],
+                ...pipeline,
+            };
+        }),
     reset: () => set(INITIAL_SCENE),
 }));

@@ -410,3 +410,37 @@ html, body, #root {
   background: transparent;
   word-break: break-all;
 }
+
+/* ── 工具列（sidebar 最上方） ── */
+.sidebar__top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: 4px;
+}
+
+.sidebar__section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── 小尺寸按鈕 ── */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn-ghost:disabled {
+  color: #ccc;
+  border-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.btn-ghost:disabled:hover {
+  background: transparent;
+}

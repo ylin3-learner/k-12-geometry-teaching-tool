@@ -2,11 +2,12 @@ import { Canvas } from './features/canvas/Canvas';
 import { PasteHandler } from './features/input/PasteHandler';
 import { TextInput } from './features/input/TextInput';
 import { GuidedNaming } from './features/parser/GuidedNaming';
+import { ParserView } from './features/parser/ParserView';
 import { UnresolvedList } from './features/parser/UnresolvedList';
 import { EmptyDefinitionsHint } from './features/parser/EmptyDefinitionsHint';
 import { ManualLinkControl } from './features/controls/ManualLinkControl';
 import { LayerPanel } from './features/controls/LayerPanel';
-
+import { ResetButton } from './features/controls/ResetButton';   // 新增
 import './App.css';
 
 function App() {
@@ -16,13 +17,19 @@ function App() {
 
       <div className="main">
         <aside className="sidebar">
+          <div className="sidebar__top-row">
+            <span className="sidebar__section-label">工具</span>
+            <ResetButton />
+          </div>
+
           <section className="sidebar__section">
             <label className="sidebar__label">題目文字</label>
             <TextInput />
           </section>
 
-          <EmptyDefinitionsHint />
+          <ParserView />
           <UnresolvedList />
+          <EmptyDefinitionsHint />
           <ManualLinkControl />
           <LayerPanel />
         </aside>
