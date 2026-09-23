@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { ImageLayer } from './ImageLayer';
 import { ShapeLayer } from './ShapeLayer';
+import { SharedVertexHalo } from './SharedVertexHalo'; // 新增
 import { VertexLayer } from './VertexLayer';
 import { useSceneStore } from '../../store/useSceneStore';
 import {
@@ -78,6 +79,7 @@ export function Canvas() {
         >
             <ImageLayer />
             <ShapeLayer />         {/* 新增：形狀在底層 */}
+            <SharedVertexHalo />    {/* 新增 */}
             <VertexLayer />        {/* 頂點在上層 */}
         </svg>
     );
