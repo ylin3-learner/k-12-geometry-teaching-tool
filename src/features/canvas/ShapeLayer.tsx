@@ -9,28 +9,26 @@ export function ShapeLayer() {
   const shapes = useSceneStore((s) => s.shapes);
   const vertices = useSceneStore((s) => s.vertices);
   const explodeProgress = useSceneStore((s) => s.explodeProgress);
+  const rotationShapeId = useSceneStore((s) => s.rotationShapeId);
+  const rotationPivotId = useSceneStore((s) => s.rotationPivotId);
+  const rotationAngle = useSceneStore((s) => s.rotationAngle);
   const image = useSceneStore((s) => s.image);
 
   const imageW = image?.naturalWidth ?? 800;
   const imageH = image?.naturalHeight ?? 600;
-  const padding = Math.min(imageW, imageH) * 0.03;   // 圖片短邊 3%
+  const padding = Math.min(imageW, imageH) * 0.03;
 
   const offsets = computeShapeOffsets(shapes, vertices);
   const distance = resolveExplodeDistanceByShape(
-    shapes,
-    vertices,
-    offsets,
-    imageW,
-    imageH,
-    padding,
-    3.0,   // ← 明確指定 separationFactor
+    shapes, vertices, offsets, imageW, imageH, padding, 3.0,
   );
+
+  const rotation = rotationShapeId && rotationPivotId
+    ? { shapeId: rotationShapeId, pivotId: rotationPivotId, angle: rotationAngle }
+    : undefined;
+
   const shapePositions = computeShapeVertexPositions(
-    shapes,
-    vertices,
-    offsets,
-    distance,
-    explodeProgress,
+    shapes, vertices, offsets, distance, explodeProgress, rotation,
   );
 
   return (
@@ -47,9 +45,7 @@ export function ShapeLayer() {
 
         if (positions.length !== shape.vertexIds.length) return null;
 
-        const points = positions
-          .map((p) => `${p.x},${p.y}`)
-          .join(' ');
+        const points = positions.map((p) => `${p.x},${p.y}`).join(' ');
 
         return (
           <polygon

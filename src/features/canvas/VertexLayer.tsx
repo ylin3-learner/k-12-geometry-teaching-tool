@@ -31,6 +31,10 @@ export function VertexLayer() {
   const setCurrentManualShape = useSceneStore((s) => s.setCurrentManualShape);
   const explodeProgress = useSceneStore((s) => s.explodeProgress);
 
+  const rotationShapeId = useSceneStore((s) => s.rotationShapeId);
+  const rotationPivotId = useSceneStore((s) => s.rotationPivotId);
+  const rotationAngle = useSceneStore((s) => s.rotationAngle);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [snapFlashId, setSnapFlashId] = useState<string | null>(null);
 
@@ -53,12 +57,13 @@ export function VertexLayer() {
     padding,
     3.0,   // ← 明確指定 separationFactor
   );
+
+  const rotation = rotationShapeId && rotationPivotId
+    ? { shapeId: rotationShapeId, pivotId: rotationPivotId, angle: rotationAngle }
+    : undefined;
+
   const shapePositions = computeShapeVertexPositions(
-    shapes,
-    vertices,
-    offsets,
-    distance,
-    explodeProgress,
+    shapes, vertices, offsets, distance, explodeProgress, rotation,
   );
 
   // 組出要渲染的點清單：每個形狀的每個頂點一份

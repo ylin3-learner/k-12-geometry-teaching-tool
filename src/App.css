@@ -118,6 +118,7 @@ html, body, #root {
   font-size: 16px;
   z-index: 10;
   pointer-events: auto;
+  transition: none;
 }
 
 .guided-naming__text strong {
@@ -450,4 +451,41 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* ── 旋轉控制 ── */
+.rotation-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: #f0f7ff;
+  border: 1px solid #c8e0ff;
+  border-radius: 6px;
+}
+
+.rotation-control__target {
+  font-size: 13px;
+  color: #1e40af;
+}
+
+.rotation-control__target code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  background: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #1e40af;
+}
+
+.rotation-control__slider {
+  width: 100%;
+  accent-color: #4a90e2;
+}
+
+.rotation-control__angle {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e40af;
+  text-align: center;
 }

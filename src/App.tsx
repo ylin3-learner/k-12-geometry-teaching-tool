@@ -9,6 +9,7 @@ import { ManualLinkControl } from './features/controls/ManualLinkControl';
 import { LayerPanel } from './features/controls/LayerPanel';
 import { ResetButton } from './features/controls/ResetButton';   // 新增
 import { ExplodeControl } from './features/controls/ExplodeControl';
+import { RotationControl } from './features/controls/RotationControl';
 
 import './App.css';
 
@@ -35,6 +36,7 @@ function App() {
           <ManualLinkControl />
           <LayerPanel />
           <ExplodeControl />
+          <RotationControl />
         </aside>
 
         <main className="canvas-container">

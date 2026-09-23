@@ -2,6 +2,12 @@ import type { Shape, Vertex } from '../parser/types';
 
 export type Point = { x: number; y: number };
 
+export type RotationState = {
+  shapeId: string;
+  pivotId: string;
+  angle: number;   // 度
+};
+
 /**
  * 計算每個可見形狀的爆炸偏移方向（單位向量）。
  *
@@ -79,6 +85,7 @@ export function computeShapeVertexPositions(
   offsets: Map<string, Point>,
   distance: number,
   progress: number,
+  rotation?: RotationState,
 ): Map<string, Map<string, Point>> {
   const result = new Map<string, Map<string, Point>>();
   const byId = new Map(vertices.map((v) => [v.id, v]));
@@ -88,17 +95,32 @@ export function computeShapeVertexPositions(
     const dir = offsets.get(s.id);
     const inner = new Map<string, Point>();
 
+    // 這個形狀是否需要旋轉？
+    const isRotating = rotation?.shapeId === s.id;
+    const pivotVertex = isRotating ? byId.get(rotation!.pivotId) : null;
+    const pivotPos = pivotVertex?.position;
+
     for (const vid of s.vertexIds) {
       const v = byId.get(vid);
       if (!v) continue;
-      if (dir) {
-        inner.set(vid, {
-          x: v.position.x + dir.x * distance * progress,
-          y: v.position.y + dir.y * distance * progress,
-        });
-      } else {
-        inner.set(vid, { ...v.position });
+
+      // 1. 起點：原始位置
+      let pos: Point = { ...v.position };
+
+      // 2. 若此形狀要旋轉 → 繞 pivot 旋轉
+      if (isRotating && pivotPos) {
+        pos = rotateAround(pos, pivotPos, rotation!.angle);
       }
+
+      // 3. 加上爆炸偏移（若有）
+      if (dir) {
+        pos = {
+          x: pos.x + dir.x * distance * progress,
+          y: pos.y + dir.y * distance * progress,
+        };
+      }
+
+      inner.set(vid, pos);
     }
 
     result.set(s.id, inner);
@@ -243,4 +265,17 @@ function averagePoint(points: Point[]): Point {
     sy += p.y;
   }
   return { x: sx / points.length, y: sy / points.length };
+}
+
+// 繞 pivot 旋轉一個點
+function rotateAround(p: Point, pivot: Point, angleDeg: number): Point {
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = p.x - pivot.x;
+  const dy = p.y - pivot.y;
+  return {
+    x: pivot.x + dx * cos - dy * sin,
+    y: pivot.y + dx * sin + dy * cos,
+  };
 }

@@ -28,7 +28,27 @@ const INITIAL_SCENE: Scene = {
     namingTotal: 0,
     currentManualShape: [],
     explodeProgress: 0,
+    rotationShapeId: null,
+    rotationPivotId: null,
+    rotationAngle: 0,
 };
+
+// 計算 Shape 的 bbox 對角線（用來判斷「哪個圖形較小」）
+function bboxDiagonal(shape: Shape, byId: Map<string, Vertex>): number {
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    for (const vid of shape.vertexIds) {
+        const v = byId.get(vid);
+        if (!v) continue;
+        if (v.position.x < minX) minX = v.position.x;
+        if (v.position.x > maxX) maxX = v.position.x;
+        if (v.position.y < minY) minY = v.position.y;
+        if (v.position.y > maxY) maxY = v.position.y;
+    }
+    const w = maxX - minX;
+    const h = maxY - minY;
+    return Math.sqrt(w * w + h * h);
+}
 
 // ── Pipeline：從文字推導出 Parser 相關狀態 ──
 // 抽出來讓 setText 和 applyFix 共用
@@ -87,6 +107,10 @@ type SceneStore = Scene & {
     setCurrentManualShape: (ids: string[]) => void;
 
     setExplodeProgress: (p: number) => void;
+
+    startRotation: () => void;
+    setRotationAngle: (angle: number) => void;
+    stopRotation: () => void;
 
     resetAnnotations: () => void;
     reset: () => void;
@@ -152,12 +176,53 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     setNamingQueue: (namingQueue) => set({ namingQueue }),
     setNamingTotal: (namingTotal) => set({ namingTotal }),
     setCurrentManualShape: (currentManualShape) => set({ currentManualShape }),
-    
+
+    startRotation: () => {
+        const state = get();
+        const visibleShapes = state.shapes.filter((s) => s.visible);
+        if (visibleShapes.length < 2) return;
+
+        const byId = new Map(state.vertices.map((v) => [v.id, v]));
+
+        // 找較小的圖形（bbox 對角線較短者）
+        let smallest = visibleShapes[0];
+        let smallestDiag = Infinity;
+        for (const s of visibleShapes) {
+            const diag = bboxDiagonal(s, byId);
+            if (diag < smallestDiag) {
+                smallestDiag = diag;
+                smallest = s;
+            }
+        }
+
+        // 找與它相關的共用頂點作為 pivot
+        const conn = state.connections.find(
+            (c) => c.shapeA === smallest.id || c.shapeB === smallest.id,
+        );
+        if (!conn || conn.sharedVertexIds.length === 0) return;
+
+        set({
+            rotationShapeId: smallest.id,
+            rotationPivotId: conn.sharedVertexIds[0],
+            rotationAngle: 0,
+            // 旋轉時強制合回原圖（避免兩個動畫同時作用）
+            explodeProgress: 0,
+        });
+    },
+
+    setRotationAngle: (rotationAngle) => set({ rotationAngle }),
+
+    stopRotation: () =>
+        set({
+            rotationShapeId: null,
+            rotationPivotId: null,
+            rotationAngle: 0,
+        }),
+
     setExplodeProgress: (explodeProgress) => set({ explodeProgress }),
 
     resetAnnotations: () =>
         set((state) => {
-            // 保留 text 與 image；根據 text 重跑 pipeline 得到新的 namingQueue
             const pipeline = runParserPipeline(state.text);
             return {
                 vertices: [],
@@ -165,6 +230,9 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
                 connections: [],
                 currentManualShape: [],
                 explodeProgress: 0,
+                rotationShapeId: null,
+                rotationPivotId: null,
+                rotationAngle: 0,
                 ...pipeline,
             };
         }),

@@ -86,6 +86,10 @@ export type Scene = {
   namingTotal: number;          // 新增：本輪命名總共要點幾個字母
   currentManualShape: string[];
   explodeProgress: number;      // 新增：0 = 原始位置，1 = 完全爆炸
+  // 新增：旋轉（與爆炸獨立）
+  rotationShapeId: string | null;    // 要旋轉的 Shape id
+  rotationPivotId: string | null;    // pivot 的 Vertex id（共用頂點）
+  rotationAngle: number;             // 旋轉角度（度），0 = 不旋轉
 };
 
 // ── OCR 狀態（Sprint 2.5 用，先佔位避免 Scene 無法編譯）──

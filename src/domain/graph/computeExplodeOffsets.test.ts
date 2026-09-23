@@ -244,6 +244,39 @@ describe('computeMaxExplodeDistance', () => {
       computeMaxExplodeDistance(shapes, vertices, offsets, 1000, 1000, 100),
     ).toBeCloseTo(450, 1);
   });
+
+    it('旋轉：進度 0 但帶 rotation → 旋轉目標圖形的頂點繞 pivot 旋轉', () => {
+    const vertices = [
+      v('v1', 100, 100),   // pivot
+      v('v2', 200, 100),   // 要旋轉的點
+    ];
+    const shapes = [shape('s1', ['v1', 'v2', 'v3'])];
+    const offsets = new Map<string, { x: number; y: number }>();   // 無爆炸
+
+    const rotation = { shapeId: 's1', pivotId: 'v1', angle: 90 };
+
+    const positions = computeShapeVertexPositions(
+      shapes, vertices, offsets, 100, 0, rotation,
+    );
+    // v1 是 pivot → 不動
+    expect(positions.get('s1')?.get('v1')?.x).toBeCloseTo(100, 1);
+    expect(positions.get('s1')?.get('v1')?.y).toBeCloseTo(100, 1);
+    // v2 在原點右邊 100 → 旋轉 90° 後變成下方 100
+    expect(positions.get('s1')?.get('v2')?.x).toBeCloseTo(100, 1);
+    expect(positions.get('s1')?.get('v2')?.y).toBeCloseTo(200, 1);
+  });
+
+  it('旋轉：未指定 rotation 的形狀不受影響', () => {
+    const vertices = [v('v1', 100, 100), v('v2', 200, 100)];
+    const shapes = [shape('s1', ['v1', 'v2'])];
+    const offsets = new Map<string, { x: number; y: number }>();
+
+    const positions = computeShapeVertexPositions(
+      shapes, vertices, offsets, 100, 0, undefined,
+    );
+    expect(positions.get('s1')?.get('v2')?.x).toBe(200);
+    expect(positions.get('s1')?.get('v2')?.y).toBe(100);
+  });
 });
 
 describe('resolveExplodeDistanceByShape', () => {
