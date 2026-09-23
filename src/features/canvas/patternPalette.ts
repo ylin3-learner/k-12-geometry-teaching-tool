@@ -1,13 +1,12 @@
 /**
- * 形狀填充的視覺編碼：
- * - 每個形狀分到一組「色相 + 斜線角度」
- * - 索引循環分配（形狀 0 藍 45°、形狀 1 橙 -45°…）
- * - 6 個色相後循環，但 patternSize 隨形狀數量緊縮
+ * 形狀填充的視覺編碼。
  *
- * 設計依據：
- * - 顏色混合在 3 層以上會退化成不可逆的視覺壓縮
- * - 斜線方向編碼讓「兩層重疊」變成「╳」而非「一種新色」
- * - patternSize 隨數量緊縮，讓更多層重疊時仍能分辨線條走向
+ * 融合兩種策略：
+ * 1. 色塊識別（借鏡教具圖片的視覺語言）——飽和底色，顏色本身可辨識
+ * 2. 方向編碼（論文編織技術）——斜線角度區分不同層
+ *
+ * 當兩個形狀重疊：底色混合（但仍飽和）+ 斜線交錯成 ╳
+ * 當三個以上重疊：方向編碼成為主要辨識線索
  */
 export type PatternStyle = {
   color: string;
@@ -15,20 +14,16 @@ export type PatternStyle = {
   patternSize: number;
 };
 
-// 6 個色相 + 對應的斜線角度（每個都不同方向）
+// 6 個高飽和色相（借鏡教具圖片的鮮豔感）+ 對應斜線角度
 const PALETTE: Omit<PatternStyle, 'patternSize'>[] = [
-  { color: '#4a90e2', angle: 45 },     // 藍   ／
-  { color: '#e67e22', angle: -45 },    // 橙   ＼
-  { color: '#27ae60', angle: 0 },      // 綠   ｜
-  { color: '#8e44ad', angle: 90 },     // 紫   ─
-  { color: '#e74c3c', angle: 30 },     // 紅   稍微斜
-  { color: '#16a085', angle: -30 },    // 青   反向斜
+  { color: '#3b82f6', angle: 45 },    // 藍 ／
+  { color: '#f97316', angle: -45 },   // 橘 ＼
+  { color: '#10b981', angle: 0 },     // 綠 ｜
+  { color: '#a855f7', angle: 90 },    // 紫 ─
+  { color: '#ef4444', angle: 30 },    // 紅（斜）
+  { color: '#06b6d4', angle: -30 },   // 青（斜反向）
 ];
 
-/**
- * 依形狀總數決定 patternSize。
- * 形狀越多，格子越小，讓更多層的斜線仍可分辨。
- */
 export function computePatternSize(shapeCount: number): number {
   if (shapeCount <= 2) return 14;
   if (shapeCount <= 4) return 12;
@@ -36,9 +31,6 @@ export function computePatternSize(shapeCount: number): number {
   return 8;
 }
 
-/**
- * 依索引取得該形狀的 pattern 樣式。
- */
 export function getPatternStyle(
   index: number,
   shapeCount: number,
@@ -50,14 +42,19 @@ export function getPatternStyle(
   };
 }
 
-// 底色透明度（低調，讓原圖可見）
-export const BASE_FILL_OPACITY = 0.10;
+// ── 視覺強度（借鏡教具圖片的飽和感）──
 
-// 斜線透明度（中等，在底色之上但不壓過）
-export const LINE_STROKE_OPACITY = 0.55;
+// 底色不透明度：0.28（看得出顏色，但仍可透視下層）
+export const BASE_FILL_OPACITY = 0.28;
 
-// 斜線寬度
-export const LINE_STROKE_WIDTH = 1.2;
+// 斜線不透明度：0.75（明顯但不壓過底色）
+export const LINE_STROKE_OPACITY = 0.75;
 
-// 形狀邊框寬度
-export const SHAPE_STROKE_WIDTH = 2;
+// 斜線寬度：1.6（在 8-14px 格子中能清晰辨識）
+export const LINE_STROKE_WIDTH = 1.6;
+
+// 形狀邊框寬度：2.5（借鏡圖片中層與層的清晰邊界）
+export const SHAPE_STROKE_WIDTH = 2.5;
+
+// 形狀邊框不透明度：1.0（飽和，成為層的分界線）
+export const SHAPE_STROKE_OPACITY = 1.0;

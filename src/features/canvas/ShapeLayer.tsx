@@ -10,6 +10,7 @@ import {
   LINE_STROKE_OPACITY,
   LINE_STROKE_WIDTH,
   SHAPE_STROKE_WIDTH,
+  SHAPE_STROKE_OPACITY,
 } from './patternPalette';
 
 export function ShapeLayer() {
@@ -114,13 +115,14 @@ export function ShapeLayer() {
           return null;
         }
 
-        return (
+         return (
           <polygon
             key={shape.id}
             points={points}
             fill={`url(#shape-pattern-${shape.id})`}
             stroke={style.color}
             strokeWidth={SHAPE_STROKE_WIDTH}
+            strokeOpacity={SHAPE_STROKE_OPACITY}
             strokeLinejoin="round"
             style={{ pointerEvents: 'none' }}
           />
