@@ -180,6 +180,37 @@ describe('computeShapeVertexPositions', () => {
     expect(positions.get('s1')?.get('v2')).toEqual({ x: 150, y: 0 });
     expect(positions.get('s1')?.get('v3')).toEqual({ x: 100, y: 100 });
   });
+
+  it('翻轉：進度 0 但帶 flipped → 沿 pivot-下一頂點 軸鏡像', () => {
+    const vertices = [
+      v('v1', 100, 100),   // pivot
+      v('v2', 200, 100),   // 軸的另一端（在 pivot 右側）
+      v('v3', 150, 50),    // 在軸上方
+    ];
+    const shapes = [shape('s1', ['v1', 'v2', 'v3'])];
+    const offsets = new Map<string, { x: number; y: number }>();
+
+    const rotation = {
+      shapeId: 's1',
+      pivotId: 'v1',
+      angle: 0,
+      flipped: true,
+    };
+
+    const positions = computeShapeVertexPositions(
+      shapes, vertices, offsets, 100, 0, rotation,
+    );
+
+    // v1 是 pivot → 不動
+    expect(positions.get('s1')?.get('v1')?.x).toBeCloseTo(100, 1);
+    expect(positions.get('s1')?.get('v1')?.y).toBeCloseTo(100, 1);
+    // v2 在軸上 → 不動
+    expect(positions.get('s1')?.get('v2')?.x).toBeCloseTo(200, 1);
+    expect(positions.get('s1')?.get('v2')?.y).toBeCloseTo(100, 1);
+    // v3 原本在軸上方（y=50），翻轉後應到軸下方（y=150）
+    expect(positions.get('s1')?.get('v3')?.x).toBeCloseTo(150, 1);
+    expect(positions.get('s1')?.get('v3')?.y).toBeCloseTo(150, 1);
+  });
 });
 
 describe('computeMaxExplodeDistance', () => {
@@ -253,7 +284,7 @@ describe('computeMaxExplodeDistance', () => {
     const shapes = [shape('s1', ['v1', 'v2', 'v3'])];
     const offsets = new Map<string, { x: number; y: number }>();   // 無爆炸
 
-    const rotation = { shapeId: 's1', pivotId: 'v1', angle: 90 };
+    const rotation = { shapeId: 's1', pivotId: 'v1', angle: 90, flipped: false };
 
     const positions = computeShapeVertexPositions(
       shapes, vertices, offsets, 100, 0, rotation,
