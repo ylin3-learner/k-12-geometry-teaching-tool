@@ -32,6 +32,10 @@ export function VertexLayer() {
   const explodeProgress = useSceneStore((s) => s.explodeProgress);
   const selectedShapeIds = useSceneStore((s) => s.selectedShapeIds);
 
+  const rotationShapeId = useSceneStore((s) => s.rotationShapeId);
+  const rotationPivotId = useSceneStore((s) => s.rotationPivotId);
+  const rotationAngle = useSceneStore((s) => s.rotationAngle);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [snapFlashId, setSnapFlashId] = useState<string | null>(null);
 
@@ -45,20 +49,21 @@ export function VertexLayer() {
 
   const offsets = computeShapeOffsets(shapes, vertices);
   const distance = resolveExplodeDistanceByShape(
-    shapes,
-    vertices,
-    offsets,
-    imageW,
-    imageH,
-    padding,
-    3.0,
+    shapes, vertices, offsets, imageW, imageH, padding, 3.0,
   );
+
+  const rotation =
+    rotationShapeId && rotationPivotId
+      ? { shapeId: rotationShapeId, pivotId: rotationPivotId, angle: rotationAngle }
+      : undefined;
+
   const shapePositions = computeShapeVertexPositions(
     shapes,
     vertices,
     offsets,
     distance,
     explodeProgress,
+    rotation,
   );
 
   const byId = new Map<string, Vertex>(vertices.map((v) => [v.id, v]));
